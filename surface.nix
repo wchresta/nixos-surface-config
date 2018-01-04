@@ -22,9 +22,6 @@ rec {
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  hardware.pulseaudio.enable = true;
-  hardware.bluetooth.enable = true;
-
   #suspend if powerbutton his bumped, rather than shutdown.
   services.logind.extraConfig = ''
     HandlePowerKey=suspend

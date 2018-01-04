@@ -24,7 +24,10 @@
 
   # non hardware specific hardware options
   hardware = {
-    pulseaudio.package = pkgs.pulseaudioFull;
+    pulseaudio.enable = true;
+    pulseaudio.package = pkgs.unstable.pulseaudioFull;
+#    pulseaudio.package = pkgs.pulseaudioFull;
+    bluetooth.enable = true;
     opengl.driSupport = true;
     opengl.driSupport32Bit = true;
   };
@@ -39,19 +42,33 @@
   # Set your time zone.
   time.timeZone = "Europe/Amsterdam";
 
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config = {
+    allowUnfree = true;
+
+    # Allows usage of unstable in package list
+    packageOverrides = pkgs: {
+      unstable = import <nixos-unstable> {
+        config = config.nixpkgs.config;
+      };
+    };
+  };
+
   # List packages installed in system profile. To search by name, run:
   # $ nix-env -qaP | grep wget
   environment.systemPackages = 
     let nvimPackages = (import ./customisation/nvimPackages.nix pkgs);
     in nvimPackages ++ (with pkgs; 
-    [ wget 
+    [ nix-repl
+      wget 
       firefox
       gparted
       powertop
+      alacritty
       xfce.terminal
+#      unstable.xfce.xfce4volumed_pulse
       #networkmanager
       #networkmanagerapplet
+      python
 
       bash-completion
       steam
@@ -59,10 +76,12 @@
       gitAndTools.gitFull
 
       irssi
+      unstable.haskellPackages.glirc
 
-      cabal-install
-      cabal2nix
-      ghc
+      unstable.cabal-install
+      unstable.cabal2nix
+      unstable.ghc
+      unstable.stack
 
       haskellPackages.xmobar
       i3status
@@ -79,7 +98,8 @@
     svi = "sudo nvim";
     enix = "sudo nvim /etc/nixos/configuration.nix";
     ehnix = "sudo nvim /etc/nixos/hardware-configuration.nix";
-    enixswitch = "sudo nixos-rebuild switch";
+    evim = "sudo nvim /etc/nixos/customisation/nvimPackages.nix";
+    enixapply = "sudo nixos-rebuild switch";
   };
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -115,8 +135,8 @@
     };
     desktopManager = {
       #default = "plasma5";
-      plasma5.enable = false;
-      xfce.enable = false;
+      plasma5.enable = true;
+      xfce.enable = true;
     };
     windowManager = {
       default = "xmonad";
@@ -133,4 +153,5 @@
   # should.
   system.stateVersion = "17.09"; # Did you read the comment?
   system.autoUpgrade.enable = true;
+  system.autoUpgrade.channel = "https://nixos.org/channels/nixos-17.09";
 }
