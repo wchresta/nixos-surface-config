@@ -33,22 +33,7 @@ rec {
   #powerManagement.powerDwnCommands = "";
   powerManagement.cpuFreqGovernor = "powersave";
 
-  boot.kernelPackages = pkgs.linuxPackages_4_4;
-  nixpkgs.config.packageOverrides = pkgs: {
-    linux_4_4 = pkgs.linux_4_4.override {
-      kernelPatches = [
-        { patch = ./linux_patches/multitouch.patch; name = "multitouch-type-cover";} 
-        { patch = ./linux_patches/touchscreen_multitouch_fixes1.patch; name = "multitouch-fixes1";} 
-        { patch = ./linux_patches/touchscreen_multitouch_fixes2.patch; name = "multitouch-fixes2";} 
-        { patch = ./linux_patches/cam.patch; name = "surfacepro3-cameras"; }
-        #{ patch = ./linux_patches/mwifiex_wakeup.patch; name = "mwifiex-wakeup-fix"; } # doesn't compile with 4.4
-      ];
-      extraConfig = ''
-        I2C_DESIGNWARE_PLATFORM m
-        X86_INTEL_LPSS y
-      '';
-    };
-  };
+  boot.kernelPackages = pkgs.linuxPackages_4_14;
 
   systemd = {
     timers.lidcheck = {

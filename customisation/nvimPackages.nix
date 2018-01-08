@@ -2,41 +2,40 @@
 
 # customisation for nix packages
 let nvim = pkgs.neovim.override {
-             vimAlias = true;
-#             viAlias = true; # 17.09 doesn't have this, yet
-	     configure = {
-	       customRC = let vimrc = builtins.readFile ./init.vim;
-	                  in ''
-                             ${vimrc}
-                             autocmd FileType hs :packadd haskell-vim
-                             autocmd FileType hs :packadd ghc-mod-vim
-                             autocmd FileType hs :packadd stylish-haskell
-                             autocmd FileType hs :packadd Hoogle
+            vimAlias = true;
+#            viAlias = true; # 17.09 doesn't have this, yet
+            configure = {
+              customRC = let vimrc = builtins.readFile ./init.vim;
+                         in ''colorscheme gruvbox
+                              ${vimrc}'';
 
-                             autocmd FileType nix :packadd tlib
-                             autocmd FileType nix :packadd vim-addon-actions
-                             autocmd FileType nix :packadd vim-addon-mw-utils
-                             autocmd FileType nix :packadd vim-nix
-                             autocmd FileType nix :packadd vim-addon-nix
-                             '';
-
-               packages.myVimPackage = with pkgs.vimPlugins; {
-                 start = [ Supertab 
-                           airline 
-                         ];
-                 opt = [ ghc-mod-vim 
-                         haskell-vim 
-                         stylish-haskell
-                         Hoogle
-
-                         tlib # needed by vim-addon-nix
-                         vim-addon-actions # needed by vim-addon-nix
-                         vim-addon-mw-utils # needed by vim-addon-nix
-                         vim-nix
-                         vim-addon-nix
-                       ];
-               };
-	     };
-           };
+              vam = {
+                knownPlugins = pkgs.vimPlugins;
+                pluginDictionaries = [
+                  # load always
+                  { names = [ "gruvbox"
+                              "airline" 
+                              "Supertab"
+                            ]; 
+                  }
+                  # load on nix config files
+                  { filename_regex = "^\\.nix\$"; 
+                    names = [ "vim-nix"
+                              "vim-addon-nix"
+                            ]; 
+                  }
+                  # load on Haskell files
+                  { ft_regex = "^haskell\$"; 
+                    names = [ "vimproc-vim"
+                              "ghc-mod-vim"
+                              "haskell-vim"
+                              "stylish-haskell"
+                              "Hoogle" 
+                            ];
+                  }
+                ];
+              };
+            };
+          };
 in with pkgs; 
    [ nvim ]

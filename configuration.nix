@@ -55,56 +55,83 @@
 
   # List packages installed in system profile. To search by name, run:
   # $ nix-env -qaP | grep wget
-  environment.systemPackages = 
-    let nvimPackages = (import ./customisation/nvimPackages.nix pkgs);
-    in nvimPackages ++ (with pkgs; 
-    [ nix-repl
-      wget 
-      firefox
-      gparted
-      powertop
-      alacritty
-      xfce.terminal
-#      unstable.xfce.xfce4volumed_pulse
-      #networkmanager
-      #networkmanagerapplet
-      python
+  environment = {
+    systemPackages = 
+      let nvimPackages = (import ./customisation/nvimPackages.nix pkgs);
+      in nvimPackages ++ (with pkgs; 
+      [ nix-repl
+        wget 
+        firefox
+        gparted
+        powertop
+        compton # a window composer, allowing us transparency without KWin
+        unstable.kitty # a nice 24-bit colour shell
+        alacritty
+        jq # to parse JSON in bash
+        file # just a generally useful tool
+        tree # nicely visualise folder structures
+  #      xfce.terminal
+  #      unstable.xfce.xfce4volumed_pulse
+        #networkmanager
+        #networkmanagerapplet
+        python
+        mcron # we want to be able to run cronjobs
 
-      bash-completion
-      steam
-      lxappearance
-      gitAndTools.gitFull
+        powerline-fonts
+        #python36Packages.powerline # Too slow
 
-      irssi
-      unstable.haskellPackages.glirc
+        bash-completion
+        steam
+        lxappearance
+        gitAndTools.gitFull
 
-      unstable.cabal-install
-      unstable.cabal2nix
-      unstable.ghc
-      unstable.stack
+        irssi
+        unstable.haskellPackages.glirc
 
-      haskellPackages.xmobar
-      i3status
-      
-      fira
-      fira-code
-      fira-code-symbols
-      fira-mono
-      dejavu_fonts
-    ]);
+        unstable.cabal-install
+        unstable.cabal2nix
+        unstable.ghc
+        unstable.stack
 
-  environment.shellAliases = {
-    vi = "nvim";
-    svi = "sudo nvim";
-    enix = "sudo nvim /etc/nixos/configuration.nix";
-    ehnix = "sudo nvim /etc/nixos/hardware-configuration.nix";
-    evim = "sudo nvim /etc/nixos/customisation/nvimPackages.nix";
-    enixapply = "sudo nixos-rebuild switch";
+  #      haskellPackages.xmobar
+  #      i3status
+        
+        fira
+        fira-code
+        fira-code-symbols
+        fira-mono
+        dejavu_fonts
+        fantasque-sans-mono
+      ]);
+
+    shellAliases = {
+      vi = "nvim";
+      svi = "sudo nvim";
+      enix = "sudo nvim /etc/nixos/configuration.nix";
+      ehnix = "sudo nvim /etc/nixos/hardware-configuration.nix";
+      evim = "sudo nvim /etc/nixos/customisation/nvimPackages.nix";
+      enixtest = "sudo nixos-rebuild test";
+      enixapply = "sudo nixos-rebuild switch";
+    };
+
+    variables = {
+      EDITOR = "nvim";
+    };
   };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
-  # programs.bash.enableCompletion = true;
+  programs.bash = {
+    #enableCompletion = true; # this MAY slow down bash significantly
+
+    # Enable airline-shellprompt prompt if it exists
+    # Create this by running :PromptlineSnapshot ~/.airline-shellprompt.sh airline inside vim/neovim
+    interactiveShellInit = ''
+      if [ -f ~/.airline-shellprompt.sh ]; then
+        source ~/.airline-shellprompt.sh
+      fi
+      '';
+  };
   # programs.mtr.enable = true;
   # programs.gnupg.agent = { enable = true; enableSSHSupport = true; };
 
@@ -134,9 +161,9 @@
       lightdm.enable = true;
     };
     desktopManager = {
-      #default = "plasma5";
+      default = "plasma5";
       plasma5.enable = true;
-      xfce.enable = true;
+      xfce.enable = false;
     };
     windowManager = {
       default = "xmonad";
