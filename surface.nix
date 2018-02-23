@@ -12,7 +12,10 @@ rec {
     MatchDevicePath "/dev/input/event*"
     Option "vendor" "045e"
     Option "product" "07e2"
-    '';
+    #Option "TapButton2" "0"
+    Option "SoftButtonAreas" "0 40% 82% 0 0 0 0 0"
+   '';
+
   };
 
   boot.kernelModules = [ "hid-multitouch" ];
@@ -23,9 +26,9 @@ rec {
   boot.loader.efi.canTouchEfiVariables = true;
 
   #suspend if powerbutton his bumped, rather than shutdown.
+  services.logind.lidSwitch = "ignore";
   services.logind.extraConfig = ''
     HandlePowerKey=suspend
-    HandleLidSwitch=ignore
   '';
 
   powerManagement.enable = true;
@@ -33,6 +36,9 @@ rec {
   #powerManagement.powerDwnCommands = "";
   powerManagement.cpuFreqGovernor = "powersave";
 
+  #boot.kernelPackages = pkgs.linuxPackages_4_14; # cannot be used since mwifiex fails to wakeup from suspension and fills the log with:
+  #[ 3735.896491] mwifiex_pcie 0000:01:00.0: cmd_wait_q terminated: -110
+  #[ 3735.896494] mwifiex_pcie 0000:01:00.0: deleting the crypto keys
   boot.kernelPackages = pkgs.linuxPackages_4_4;
   nixpkgs.config.packageOverrides = pkgs: {
     linux_4_4 = pkgs.linux_4_4.override {
@@ -61,11 +67,11 @@ rec {
     };
 
     services = {
-      lidcheck = {
-        environment = { DISPLAY = ":0"; };
-        description = "ensure sleep when unpowered and lid closed";
-        script = services.acpid.lidEventCommands;
-      };
+      #lidcheck = {
+      #  environment = { DISPLAY = ":0"; };
+      #  description = "ensure sleep when unpowered and lid closed";
+      #  script = services.acpid.lidEventCommands;
+      #};
 
 
       tune-power-management = {
@@ -104,7 +110,11 @@ rec {
           done
           echo 1500 > /proc/sys/vm/dirty_writeback_centisecs
           echo auto > /sys/bus/usb/devices/1-3/power/control
-          echo auto > /sys/bus/usb/devices/1-6/power/control
+          # Often, the wifi adapter is set up very late.
+          # So we try to set this multiple times
+          for i in {1..5}; do
+            (echo auto > /sys/bus/usb/devices/1-6/power/control) && break || sleep 1
+          done & # do not block boot with this
         '';
       };
     };
@@ -121,7 +131,7 @@ rec {
     export DISPLAY=':0'
     if [ $LID_STATE = 'closed' ]; then
       xset dpms force off
-      xautolock -locknow
+      #xautolock -locknow #xautolock not installed
       systemctl suspend
       if [ $AC_STATE = '0' ]; then
         systemctl suspend
@@ -130,17 +140,20 @@ rec {
 
   '';
 
+  # set what happens when power-state changes
+  # this needs the nixos.iw
   services.acpid.acEventCommands = ''
     export PATH=/run/current-system/sw/bin
+    export DISPLAY=:0
     AC_STATE=$(cat /sys/class/power_supply/AC0/online)
     if [ $AC_STATE = '0' ]; then
       iw dev wlp1s0 set power_save on
+      xset dpms 600 900 1200 # standby/suspend/off after 10/15/20 minutes
     else
       iw dev wlp1s0 set power_save off
+      xset dpms 7200 0 0 # standby after 2 hours
     fi
   '';
 
   # set power-management, inspired by powertop and ebzzry/dotfiles/blob/master/nixos/configuration.nix
-
-
 }
